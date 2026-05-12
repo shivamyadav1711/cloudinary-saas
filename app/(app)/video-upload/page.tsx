@@ -1,98 +1,202 @@
-"use client"
-import React, {useState} from 'react'
-import axios from 'axios'
-import { useRouter } from 'next/navigation'
+"use client";
 
-function VideoUpload() {
-    const [file, setFile] = useState<File | null>(null)
-    const [title, setTitle] = useState("")
-    const [description, setDescription] = useState("")
-    const [isUploading, setIsUploading] = useState(false)
+import React, { useState } from "react";
 
-    const router = useRouter()
-    //max file size of 60 mb
+export default function VideoUploadPage() {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    const MAX_FILE_SIZE = 70 * 1024 * 1024
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!file) return;
-
-        if (file.size > MAX_FILE_SIZE) {
-            //TODO: add notification
-            alert("File size too large")
-            return;
-        }
-
-        setIsUploading(true)
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("title", title);
-        formData.append("description", description);
-        formData.append("originalSize", file.size.toString());
-
-        try {
-            const response = await axios.post("/api/video-upload", formData)
-            // check for 200 response
-            router.push("/")
-        } catch (error) {
-            console.log(error)
-            // notification for failure
-        } finally{
-            setIsUploading(false)
-        }
-
+    if (!videoFile) {
+      alert("Please select a video");
+      return;
     }
 
+    try {
+      setLoading(true);
 
-    return (
-        <div className="container mx-auto p-4">
-          <h1 className="text-2xl font-bold mb-4">Upload Video</h1>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      const formData = new FormData();
+
+      // IMPORTANT
+      formData.append("file", videoFile);
+
+      formData.append("title", title);
+      formData.append("description", description);
+
+      const response = await fetch("/api/video-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      alert("Video uploaded successfully");
+
+      setTitle("");
+      setDescription("");
+      setVideoFile(null);
+
+      window.location.href = "/home";
+    } catch (error: any) {
+      console.log(error);
+      alert(error.message || "Failed to upload video");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#020817] text-white px-6 py-10">
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-[#0f172a] border border-[#1e293b] rounded-3xl p-8 shadow-2xl">
+
+          <h1 className="text-4xl font-bold text-center mb-10">
+            Upload Video
+          </h1>
+
+          <form onSubmit={handleUpload} className="space-y-8">
+
+            {/* TITLE */}
             <div>
-              <label className="label">
-                <span className="label-text">Title</span>
+              <label className="block text-lg font-semibold mb-3 text-white">
+                Video Title
               </label>
+
               <input
                 type="text"
+                placeholder="Enter video title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="input input-bordered w-full"
                 required
+                className="
+                  w-full
+                  bg-[#111827]
+                  border
+                  border-[#374151]
+                  rounded-xl
+                  px-5
+                  py-4
+                  text-white
+                  placeholder:text-gray-400
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-violet-500
+                "
               />
             </div>
+
+            {/* DESCRIPTION */}
             <div>
-              <label className="label">
-                <span className="label-text">Description</span>
+              <label className="block text-lg font-semibold mb-3 text-white">
+                Description
               </label>
+
               <textarea
+                rows={5}
+                placeholder="Write something about your video..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="textarea textarea-bordered w-full"
+                className="
+                  w-full
+                  bg-[#111827]
+                  border
+                  border-[#374151]
+                  rounded-xl
+                  px-5
+                  py-4
+                  text-white
+                  placeholder:text-gray-400
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-violet-500
+                  resize-none
+                "
               />
             </div>
+
+            {/* FILE */}
             <div>
-              <label className="label">
-                <span className="label-text">Video File</span>
+              <label className="block text-lg font-semibold mb-3 text-white">
+                Select Video File
               </label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="file-input file-input-bordered w-full"
-                required
-              />
+
+              <div
+                className="
+                  bg-[#111827]
+                  border-2
+                  border-dashed
+                  border-[#374151]
+                  rounded-2xl
+                  p-8
+                "
+              >
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) =>
+                    setVideoFile(e.target.files?.[0] || null)
+                  }
+                  className="
+                    w-full
+                    text-white
+                    file:bg-violet-600
+                    file:text-white
+                    file:border-0
+                    file:rounded-lg
+                    file:px-4
+                    file:py-2
+                    file:mr-4
+                    file:cursor-pointer
+                    cursor-pointer
+                  "
+                />
+
+                {videoFile && (
+                  <div className="mt-4">
+                    <p className="text-green-400 font-medium">
+                      Selected: {videoFile.name}
+                    </p>
+
+                    <p className="text-sm text-gray-400 mt-1">
+                      Size: {(videoFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* BUTTON */}
             <button
               type="submit"
-              className="btn btn-primary"
-              disabled={isUploading}
+              disabled={loading}
+              className="
+                w-full
+                bg-violet-600
+                hover:bg-violet-700
+                transition-all
+                duration-300
+                rounded-xl
+                py-4
+                text-lg
+                font-bold
+                shadow-lg
+                disabled:opacity-50
+              "
             >
-              {isUploading ? "Uploading..." : "Upload Video"}
+              {loading ? "Uploading..." : "Upload Video"}
             </button>
+
           </form>
         </div>
-      );
+      </div>
+    </div>
+  );
 }
-
-export default VideoUpload

@@ -1,38 +1,68 @@
-"use client"
+"use client";
 
 import Link from "next/link";
-import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { Home, Share2, Upload } from "lucide-react";
+import { SignOutButton } from "@clerk/nextjs";
 
 export default function Navbar() {
   return (
-    <div className="w-full border-b border-white/10 bg-black/30 backdrop-blur-xl sticky top-0 z-50">
+    <div className="h-full flex flex-col p-4">
 
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      {/* Logo */}
+      <div className="text-2xl font-bold mb-10 text-white">
+        Cloudinary Showcase
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex flex-col gap-3">
 
         <Link
           href="/home"
-          className="text-3xl font-extrabold glow-text"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition"
         >
-          AI SaaS
+          <Home size={20} />
+          <span>Home Page</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <Link
+          href="/social-share"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800 transition"
+        >
+          <Share2 size={20} />
+          <span>Social Share</span>
+        </Link>
 
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="glow-btn px-6 py-2 rounded-xl font-semibold">
-                Sign In
-              </button>
-            </SignInButton>
-          </SignedOut>
+        <Link
+          href="/video-upload"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800 transition"
+        >
+          <Upload size={20} />
+          <span>Video Upload</span>
+        </Link>
 
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+      </nav>
 
-        </div>
-
+      {/* Logout Button */}
+      <div className="mt-auto pt-6">
+        <SignOutButton>
+          <button
+            className="
+              w-full
+              bg-red-600
+              hover:bg-red-700
+              text-white
+              py-3
+              rounded-xl
+              font-semibold
+              transition-all
+              duration-300
+            "
+          >
+            Logout
+          </button>
+        </SignOutButton>
       </div>
+
     </div>
   );
 }

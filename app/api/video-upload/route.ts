@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
+
+    // USER AUTH
     const user = await currentUser();
 
     if (!user) {
@@ -16,54 +18,71 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ Import Cloudinary INSIDE handler
+    // CLOUDINARY IMPORT
     const { v2: cloudinary } = await import("cloudinary");
 
+    // CLOUDINARY CONFIG
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-      api_key: process.env.CLOUDINARY_API_KEY!,
-      api_secret: process.env.CLOUDINARY_API_SECRET!,
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
     });
 
+    // FORM DATA
     const formData = await req.formData();
 
+    // IMPORTANT
     const file = formData.get("file") as File | null;
-    const title = (formData.get("title") as string) || "";
-    const description = (formData.get("description") as string) || "";
-    const originalSize = (formData.get("originalSize") as string) || "";
+
+    const title =
+      (formData.get("title") as string) || "";
+
+    const description =
+      (formData.get("description") as string) || "";
 
     if (!file) {
       return NextResponse.json(
-        { error: "No file uploaded" },
+        { error: "No video uploaded" },
         { status: 400 }
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // BUFFER
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
+    // UPLOAD TO CLOUDINARY
     const uploadResult: any = await new Promise(
       (resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            resource_type: "video",
-            folder: "video-uploads",
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
 
-        stream.end(buffer);
+        const uploadStream =
+          cloudinary.uploader.upload_stream(
+            {
+              resource_type: "video",
+              folder: "video-uploads",
+            },
+            (error, result) => {
+
+              if (error) {
+                console.log(error);
+                reject(error);
+              } else {
+                resolve(result);
+              }
+            }
+          );
+
+        uploadStream.end(buffer);
       }
     );
 
+    // SAVE TO DATABASE
     const video = await prisma.video.create({
       data: {
         title,
         description,
         publicId: uploadResult.public_id,
-        originalSize,
+        originalSize: String(uploadResult.bytes),
         compressedSize: String(uploadResult.bytes),
         duration: uploadResult.duration || 0,
       },
@@ -71,12 +90,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(video);
 
-  } catch (error) {
-    console.error("VIDEO_UPLOAD_ERROR:", error);
+  } catch (error: any) {
+
+    console.log("VIDEO_UPLOAD_ERROR:", error);
 
     return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
+      {
+        error: error.message || "Upload failed",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
