@@ -3,14 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,6 +15,15 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    // ✅ Import Cloudinary INSIDE handler
+    const { v2: cloudinary } = await import("cloudinary");
+
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+      api_key: process.env.CLOUDINARY_API_KEY!,
+      api_secret: process.env.CLOUDINARY_API_SECRET!,
+    });
 
     const formData = await req.formData();
 
