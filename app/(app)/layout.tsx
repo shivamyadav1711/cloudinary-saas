@@ -1,22 +1,7 @@
-import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import "./globals.css";
-
-export const metadata: Metadata = {
-  title: "Cloudinary SaaS",
-  description: "Video Upload SaaS",
-};
-
-export default function RootLayout({
+export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <ClerkProvider>
-      <html lang="en">
-        <body>{children}</body>
-      </html>
-    </ClerkProvider>
-  );
+  return <>{children}</>;
 }
