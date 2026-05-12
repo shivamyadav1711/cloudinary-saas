@@ -3,25 +3,23 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
-// ❗ DO NOT configure at top level
+// ✅ safer Cloudinary setup (no top-level config issues)
 function getCloudinary() {
-  const c = cloudinary;
-
-  c.config({
+  cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
     api_key: process.env.CLOUDINARY_API_KEY!,
     api_secret: process.env.CLOUDINARY_API_SECRET!,
   });
 
-  return c;
+  return cloudinary;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // ⚠️ wrap auth safely (this fixes build-time crash cases)
+    // ✅ SAFE auth handling (prevents build crash)
     const authResult = await auth();
     const userId = authResult?.userId;
 
@@ -37,7 +35,7 @@ export async function POST(req: NextRequest) {
     const originalSize = (formData.get("originalSize") as string) || "";
 
     if (!file) {
-      return NextResponse.json({ error: "No file" }, { status: 400 });
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -50,8 +48,8 @@ export async function POST(req: NextRequest) {
           resource_type: "video",
           folder: "video-uploads",
         },
-        (err, result) => {
-          if (err) reject(err);
+        (error, result) => {
+          if (error) reject(error);
           else resolve(result);
         }
       );
