@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { auth } from "@clerk/nextjs/server";
@@ -19,8 +21,8 @@ interface CloudinaryUploadResult {
 
 export async function POST(request: NextRequest) {
   try {
-    // Optional auth check
-    const { userId } = auth();
+    // Clerk Auth
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
+    // Upload video to Cloudinary
     const result = await new Promise<CloudinaryUploadResult>(
       (resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -91,19 +93,20 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Save video in database
+    // Save to database
     const video = await prisma.video.create({
       data: {
         title,
         description,
         publicId: result.public_id,
-        originalSize: originalSize,
+        originalSize,
         compressedSize: String(result.bytes),
         duration: result.duration || 0,
       },
     });
 
     return NextResponse.json(video);
+
   } catch (error) {
     console.log("Upload video failed", error);
 
