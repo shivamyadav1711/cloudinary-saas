@@ -1,11 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
-import { auth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-// Configuration
+// Cloudinary Configuration
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -21,8 +19,17 @@ interface CloudinaryUploadResult {
 
 export async function POST(request: NextRequest) {
   try {
-    // todo to check user
+    // Optional auth check
+    const { userId } = auth();
 
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Check Cloudinary env variables
     if (
       !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
       !process.env.CLOUDINARY_API_KEY ||
@@ -34,6 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get form data
     const formData = await request.formData();
 
     const file = formData.get("file") as File | null;
@@ -41,6 +49,7 @@ export async function POST(request: NextRequest) {
     const description = formData.get("description") as string;
     const originalSize = formData.get("originalSize") as string;
 
+    // Validate file
     if (!file) {
       return NextResponse.json(
         { error: "File not found" },
@@ -48,10 +57,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
-
     const buffer = Buffer.from(bytes);
 
+    // Upload to Cloudinary
     const result = await new Promise<CloudinaryUploadResult>(
       (resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -69,8 +79,11 @@ export async function POST(request: NextRequest) {
           },
 
           (error, result) => {
-            if (error) reject(error);
-            else resolve(result as CloudinaryUploadResult);
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result as CloudinaryUploadResult);
+            }
           }
         );
 
@@ -78,6 +91,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // Save video in database
     const video = await prisma.video.create({
       data: {
         title,
@@ -97,7 +111,5 @@ export async function POST(request: NextRequest) {
       { error: "Upload video failed" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
