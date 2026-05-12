@@ -2,32 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+html,
+body {
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  background: #050816;
+  color: white;
+  overflow-x: hidden;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background-image:
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.25), transparent 25%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.25), transparent 25%),
+    radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.2), transparent 25%);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+* {
+  box-sizing: border-box;
+}
+
+.glow-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 0 25px rgba(139, 92, 246, 0.2),
+    0 0 50px rgba(59, 130, 246, 0.1);
+  transition: 0.3s ease;
+}
+
+.glow-card:hover {
+  transform: translateY(-5px) scale(1.01);
+  box-shadow:
+    0 0 35px rgba(139, 92, 246, 0.45),
+    0 0 70px rgba(59, 130, 246, 0.25);
+}
+
+.glow-btn {
+  background: linear-gradient(to right, #8b5cf6, #3b82f6);
+  border: none;
+  color: white;
+  transition: 0.3s ease;
+}
+
+.glow-btn:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 0 20px #8b5cf6,
+    0 0 40px #3b82f6;
+}
+
+.glow-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+}
+
+.glow-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 15px #8b5cf6;
+}
+
+.glow-text {
+  background: linear-gradient(to right, #8b5cf6, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.video-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.8),
+    rgba(0,0,0,0.2),
+    transparent
+  );
 }
