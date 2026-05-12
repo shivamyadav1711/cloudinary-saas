@@ -6,7 +6,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
-// ✅ safer Cloudinary init (prevents build-time issues)
+// ❗ DO NOT configure at top level
 function getCloudinary() {
   const c = cloudinary;
 
@@ -19,29 +19,25 @@ function getCloudinary() {
   return c;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    // ⚠️ wrap auth safely (this fixes build-time crash cases)
+    const authResult = await auth();
+    const userId = authResult?.userId;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    const formData = await req.formData();
 
     const file = formData.get("file") as File | null;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const originalSize = formData.get("originalSize") as string;
+    const title = (formData.get("title") as string) || "";
+    const description = (formData.get("description") as string) || "";
+    const originalSize = (formData.get("originalSize") as string) || "";
 
     if (!file) {
-      return NextResponse.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -54,8 +50,8 @@ export async function POST(request: NextRequest) {
           resource_type: "video",
           folder: "video-uploads",
         },
-        (error, result) => {
-          if (error) reject(error);
+        (err, result) => {
+          if (err) reject(err);
           else resolve(result);
         }
       );
@@ -76,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(video);
   } catch (error) {
-    console.error("UPLOAD ERROR:", error);
+    console.error("VIDEO_UPLOAD_ERROR:", error);
 
     return NextResponse.json(
       { error: "Upload failed" },
