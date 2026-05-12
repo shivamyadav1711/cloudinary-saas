@@ -2,19 +2,19 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
 import { auth } from "@clerk/nextjs/server";
+import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
 
     const file = formData.get("file") as File | null;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const originalSize = formData.get("originalSize") as string;
+    const title = (formData.get("title") as string) || "";
+    const description = (formData.get("description") as string) || "";
+    const originalSize = (formData.get("originalSize") as string) || "";
 
     if (!file) {
       return NextResponse.json(
@@ -42,21 +42,18 @@ export async function POST(req: NextRequest) {
 
     const uploadResult: any = await new Promise(
       (resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
+        const stream = cloudinary.uploader.upload_stream(
           {
             resource_type: "video",
             folder: "video-uploads",
           },
           (error, result) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result);
-            }
+            if (error) reject(error);
+            else resolve(result);
           }
         );
 
-        uploadStream.end(buffer);
+        stream.end(buffer);
       }
     );
 
@@ -74,7 +71,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(video);
 
   } catch (error) {
-    console.log("VIDEO_UPLOAD_ERROR:", error);
+    console.error("VIDEO_UPLOAD_ERROR:", error);
 
     return NextResponse.json(
       { error: "Upload failed" },
